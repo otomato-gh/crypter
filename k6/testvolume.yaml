@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: perf-test
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testvolume
+spec:
+  containers:
+  - image: otomato/gocrypt_test
+    name: testvolume
+    command:
+    - sh
+    - -c
+    - cp /script/* /test/ 
+    volumeMounts:
+      - mountPath: "/test"
+        name: perf-test
+  volumes:
+  - name: perf-test
+    persistentVolumeClaim:
+      claimName: perf-test
+  restartPolicy: Never
