@@ -48,7 +48,7 @@ const data = new SharedArray('texts', function () {
 export default function () {
 
   // define URL and payload
-  const url = "http://gocrypt:8080/encrypt";
+  const url = "http://crypter:8080/encrypt";
 //  const payload = JSON.stringify({
 //    plaintext: "In this tutorial, you've used k6 to make a POST request and check that it responds with a 200 status.",
 //  });

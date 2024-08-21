@@ -6,18 +6,19 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"log"
+	"math/big"
 	"net/http"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 var (
-	// We're using a 32 byte long secret key.
-	// This is probably something you generate first
-	// then put into and environment variable.
+	start            = time.Now()
 	secretKey string = "8e8c2771be5c2bb10d541a5bf6aa51203e0bce2d6d4fa267afd89a6e20df11f1"
+	timestamp string
 )
 
 type Plaintext struct {
@@ -36,21 +37,10 @@ func encrypt(c *gin.Context) {
 	}
 
 	key, err := hex.DecodeString(secretKey)
-	go func() {
-		runtime.LockOSThread()
-
-		begin := time.Now()
-		log.Print("Running 100% CPU for", len(input.Plaintext), "microseconds")
-		for {
-			// run 100%
-			if time.Now().Sub(begin) > time.Duration(len(input.Plaintext))*time.Microsecond {
-				break
-			}
-		}
-		// sleep
-		time.Sleep(time.Duration(len(input.Plaintext)) * time.Microsecond)
-	}()
-
+	if err != nil {
+		panic(err)
+	}
+	log.Print(" key is %s", key)
 	aes, err := aes.NewCipher(key)
 	if err != nil {
 		panic(err)
@@ -74,7 +64,7 @@ func encrypt(c *gin.Context) {
 	// is enough to separate it from the ciphertext.
 	ciphertext := gcm.Seal(nonce, nonce, []byte(input.Plaintext), nil)
 
-	beforenc := []byte(ciphertext)
+	beforenc := append([]byte(timestamp), []byte(ciphertext)...)
 	encoded := make([]byte, hex.EncodedLen(len(beforenc)))
 	hex.Encode(encoded, beforenc)
 	c.JSON(http.StatusOK, Ciphertext{Ciphertext: string(encoded)})
@@ -87,7 +77,16 @@ func decrypt(c *gin.Context) {
 		return
 	}
 
-	log.Print(input)
+	decode, _ := hex.DecodeString(input.Ciphertext)
+
+	ts, encrypted := decode[:8], decode[8:]
+	log.Print("ts is ", string(ts))
+	if string(ts) != timestamp {
+		log.Print("expired")
+		c.JSON(http.StatusGone, Plaintext{Plaintext: "expired"})
+		return
+	}
+
 	key, err := hex.DecodeString(secretKey)
 	aes, err := aes.NewCipher([]byte(key))
 	if err != nil {
@@ -103,8 +102,7 @@ func decrypt(c *gin.Context) {
 	// Since we know the ciphertext is actually nonce+ciphertext
 	// And len(nonce) == NonceSize(). We can separate the two.
 	nonceSize := gcm.NonceSize()
-	decode, _ := hex.DecodeString(input.Ciphertext)
-	nonce, ciphertext := decode[:nonceSize], decode[nonceSize:]
+	nonce, ciphertext := encrypted[:nonceSize], encrypted[nonceSize:]
 
 	log.Default().Print(nonce)
 	log.Default().Print(ciphertext)
@@ -116,7 +114,44 @@ func decrypt(c *gin.Context) {
 	c.JSON(http.StatusOK, Plaintext{Plaintext: string(plaintext)})
 }
 
+func GenerateRandomString(n int) (string, error) {
+	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
+	ret := make([]byte, n)
+	for i := 0; i < n; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
+		if err != nil {
+			return "", err
+		}
+		ret[i] = letters[num.Int64()]
+	}
+
+	return hex.EncodeToString(ret), nil
+}
+
 func main() {
+
+	go func() {
+		runtime.LockOSThread()
+		for {
+			now := time.Now()
+
+			if now.Sub(start) > 30*time.Second {
+				secretKey, _ = GenerateRandomString(32)
+				timestamp = strconv.FormatInt(now.Unix(), 16)
+				log.Print("Time passed, generating a new secret key ", secretKey)
+				log.Print("timestamp is ", timestamp)
+				start = now
+			}
+			// for {
+			// 	// run 100%
+			// 	if time.Now().Sub(now) > time.Duration(len(input.Plaintext))*time.Microsecond {
+			// 		break
+			// 	}
+			// }
+			// sleep
+			time.Sleep(1 * time.Second)
+		}
+	}()
 
 	router := gin.Default()
 

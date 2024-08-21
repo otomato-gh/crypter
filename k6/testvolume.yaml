@@ -15,7 +15,7 @@ metadata:
   name: testvolume
 spec:
   containers:
-  - image: otomato/gocrypt_test
+  - image: otomato/crypter-test
     name: testvolume
     command:
     - sh
