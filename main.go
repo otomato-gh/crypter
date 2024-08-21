@@ -36,6 +36,14 @@ func encrypt(c *gin.Context) {
 		return
 	}
 
+	go func() {
+		runtime.LockOSThread()
+		// Generate a random string of 320000 bytes
+		_, _ = GenerateRandomString(320000)
+		time.Sleep(1 * time.Second)
+
+	}()
+
 	key, err := hex.DecodeString(secretKey)
 	if err != nil {
 		panic(err)
@@ -136,7 +144,6 @@ func main() {
 			now := time.Now()
 
 			if now.Sub(start) > 30*time.Second {
-				_, _ = GenerateRandomString(320000)
 				secretKey, _ = GenerateRandomString(32)
 				timestamp = strconv.FormatInt(now.Unix(), 16)
 				log.Print("Time passed, generating a new secret key ", secretKey)
