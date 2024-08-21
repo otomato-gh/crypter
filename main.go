@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -155,7 +156,7 @@ func main() {
 	}()
 
 	router := gin.Default()
-
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	router.POST("/encrypt", encrypt)
 	router.POST("/decrypt", decrypt)
 	router.Run()

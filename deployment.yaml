@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: crypter
+  name: crypter
+spec:
+  selector:
+    matchLabels:
+      app: crypter
+  template:
+    metadata:
+      labels:
+        app: crypter
+    spec:
+      containers:
+      - image: otomato/crypter
+        name: crypter
