@@ -11,3 +11,7 @@ spec:
       name: perf-test
       file: api-test.js
   separate: false
+  runner:
+    env:
+      - name: CRYPTER_API_URL
+        value: 'http://crypter:8080'

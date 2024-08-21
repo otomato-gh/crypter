@@ -10,19 +10,7 @@ export const options = {
   },
   // define scenarios
   scenarios: {
-    // arbitrary name of scenario
-    average_load: {
-      executor: "ramping-vus",
-      stages: [
-        // ramp up to average load of 20 virtual users
-        { duration: "10s", target: 100 },
-        // maintain load
-        { duration: "50s", target: 300 },
-        // ramp down to zero
-        { duration: "5s", target: 0 },
-      ],
-    },
-    breaking: {
+    ramping_up: {
       executor: "ramping-vus",
       stages: [
         { duration: "10s", target: 20 },
@@ -33,7 +21,7 @@ export const options = {
         { duration: "50s", target: 100 },
         { duration: "50s", target: 120 },
         { duration: "50s", target: 140 },
-        //....
+        { duration: "5s", target: 0 }, // scale down. (optional)
       ],
     },
   }
@@ -46,12 +34,18 @@ const data = new SharedArray('texts', function () {
   });
 
 export default function () {
-
+  
   // define URL and payload
-  const url = "http://crypter:8080/encrypt";
-//  const payload = JSON.stringify({
-//    plaintext: "In this tutorial, you've used k6 to make a POST request and check that it responds with a 200 status.",
-//  });
+  var crypter_api_url = 'http://localhost:8080';
+  if (__ENV.CRYPTER_API_URL === undefined) {
+    console.log("CRYPTER_API_URL is not set, using default http://localhost:8080");
+
+  } else {
+    console.log(`CRYPTER_API_URL is set to ${__ENV.CRYPTER_API_URL}`);
+    crypter_api_url = `${__ENV.CRYPTER_API_URL}`;
+  }
+  
+  const url = crypter_api_url+'/encrypt';
 
 
   const params = {
@@ -66,5 +60,6 @@ export default function () {
   const res = http.post(url, payload, params);
 
   console.log(res.body);
+  console.log(`CRYPTER_API_URL is set to ${__ENV.CRYPTER_API_URL}`);
 }
 
