@@ -25,7 +25,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         push: true
-        tags: otomato/crypter:${{ env.GITHUB_REF_NAME }}
+        tags: otomato/crypter:${{ env.BRANCH }}
         platforms: linux/amd64,linux/arm64
         build-args: |
           BRANCH=${{ env.BRANCH }}
