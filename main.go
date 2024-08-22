@@ -37,13 +37,13 @@ func encrypt(c *gin.Context) {
 		return
 	}
 
-	go func() {
-		runtime.LockOSThread()
-		// Generate a random string of 320000 bytes
-		_, _ = GenerateRandomString(320000)
-		time.Sleep(1 * time.Second)
+	// go func() {
+	// 	runtime.LockOSThread()
+	// 	// Generate a random string of 320000 bytes
+	// 	_, _ = GenerateRandomString(320000)
+	// 	time.Sleep(1 * time.Second)
 
-	}()
+	// }()
 
 	key, err := hex.DecodeString(secretKey)
 	if err != nil {
